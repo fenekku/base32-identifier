@@ -22,6 +22,7 @@ This is based on:
 - https://github.com/jbittel/base32-crockford
 """
 
+import random
 import string
 
 import six
@@ -29,11 +30,6 @@ import six
 # NO i, l, o or u
 ENCODING_CHARS = '0123456789abcdefghjkmnpqrstvwxyz'
 DECODING_CHARS = {c: i for i, c in enumerate(ENCODING_CHARS)}
-
-
-def generate():
-    """Generate random base32 identifier."""
-    pass
 
 
 def encode(number, split_every=0, min_length=0, checksum=False):
@@ -49,17 +45,20 @@ def encode(number, split_every=0, min_length=0, checksum=False):
     assert isinstance(number, six.integer_types)
 
     if number < 0:
-        raise ValueError("Invalid 'number'. 'number' must > 0.")
+        raise ValueError("Invalid 'number'. Must be >= 0.")
 
     if split_every < 0:
-        raise ValueError("Invalid 'split_every'. 'split_every' must > 0.")
+        raise ValueError("Invalid 'split_every'. Must be >= 0.")
 
     encoded = ''
     original_number = number
-    while number > 0:
-        remainder = number % 32
-        number //= 32  # quotient of integer division
-        encoded = ENCODING_CHARS[remainder] + encoded
+    if number == 0:
+        encoded = '0'
+    else:
+        while number > 0:
+            remainder = number % 32
+            number //= 32  # quotient of integer division
+            encoded = ENCODING_CHARS[remainder] + encoded
 
     if checksum:
         # NOTE: 100 * original_number is used because datacite also uses it
@@ -81,6 +80,31 @@ def encode(number, split_every=0, min_length=0, checksum=False):
     return encoded
 
 
+def generate(length=8, split_every=0, checksum=False):
+    """Generate random base32 string.
+
+    :param length: non-hyphen identifier length *including* checksum
+    :param split_every: hyphenates every that many characters
+    :param checksum: computes and appends ISO-7064 checksum
+    :returns: identifier as a string
+    """
+    if checksum and length < 3:
+        raise ValueError(
+            "Invalid 'length'. Must be >= 3 if checksum enabled."
+        )
+
+    generator = random.SystemRandom()
+    length = length - 2 if checksum else length
+    # takes at most length*5 bits to express, but could take less
+    number = generator.getrandbits(length * 5)
+    return encode(
+        number,
+        split_every=split_every,
+        min_length=length,  # ensures desired length
+        checksum=checksum
+    )
+
+
 def normalize(encoded):
     """Returns normalized encoded string.
 
@@ -99,7 +123,7 @@ def normalize(encoded):
     encoded = encoded.replace('-', '').translate(table).lower()
 
     if not all([c in ENCODING_CHARS for c in encoded]):
-        raise ValueError("'encoded' contains undecodable characters")
+        raise ValueError("'encoded' contains undecodable characters.")
 
     return encoded
 
