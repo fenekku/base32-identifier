@@ -40,11 +40,11 @@ Usage
     # Generate
     ## Generate a random identifier
     base32.generate()
-    # -> abcd1234
+    # -> 'abcd1234'
 
     # Generate a random identifier with bells and whistle
     base32.generate(length=10, split_every=5, checksum=True)
-    # ->
+    # -> '3sbk2-5j060'
 
     # Encode a pre-existing number
     base32.encode(1234, split_every=3, checksum=True) == "16j-82"
@@ -53,7 +53,7 @@ Usage
     base32.decode("16j-82", checksum=True) == 1234
 
     base32.decode("16i-82", checksum=True)
-    # raises ValidationError
+    # raises ValueError
 
 Features
 ========
